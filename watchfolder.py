@@ -16,7 +16,10 @@ class Watcher:
     project_dirs = parser.get('directories', 'project_dirs').split(',')
 
     DIRECTORY_TO_WATCH = project_dirs
-
+    print('Watchfolder started...')
+    print('Running on these directories:')
+    for i in range(len(project_dirs)):
+        print(project_dirs[i])
 
     def __init__(self):
 

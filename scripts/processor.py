@@ -13,7 +13,7 @@ class Processor(PatternMatchingEventHandler):
 
     @staticmethod
     def on_created(event):
-
+        print('\nNew event registered in {}. Checking for providers...'.format(event.src_path))
         parser = ConfigParser()
         parser.read(os.path.join('data', 'config.ini'), encoding = 'utf-8')
 
@@ -84,9 +84,10 @@ class Processor(PatternMatchingEventHandler):
 
     def print_warning(file_path, mt_providers):
 
+        print('\nMT providers found. Check {} for details'.format('\\'.join((file_path, 'MT WARNING.txt'))))
         with open(os.path.join(file_path, "MT WARNING.txt"), "a") as f:
 
-            f.write('MT found in return package.\n')
+            f.write('MT providers found.\n')
             for k, v in mt_providers.items():
                 f.write(str('Affected file: {}\nMT provider(s): {}\n'.format(k, v)))
 
