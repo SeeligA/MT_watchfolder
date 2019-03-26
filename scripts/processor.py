@@ -1,6 +1,7 @@
 import re
 import os.path
 import zipfile
+import time
 
 import logging
 from configparser import ConfigParser
@@ -15,7 +16,6 @@ class Processor(PatternMatchingEventHandler):
     @staticmethod
     def on_created(event):
 
-        print('new event')
 
         parser = ConfigParser()
         parser.read(os.path.join('data', 'config.ini'), encoding = 'utf-8')
@@ -48,7 +48,8 @@ class Processor(PatternMatchingEventHandler):
         providers -- nested dictionary containing providers + counts per *.SDLXLIFF working file
         '''
 
-
+        # Add sleep time to prevent PermissionError when reading file
+        time.sleep(1)
         providers = dict()
 
 

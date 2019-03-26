@@ -1,7 +1,7 @@
 import time
 
 from configparser import ConfigParser
-from watchdog.observers import  polling
+from watchdog.observers import  Observer
 
 import logging
 
@@ -25,9 +25,7 @@ class Watcher:
 
     def __init__(self):
 
-
-        # OS-independent: slow
-        self.observer = polling.PollingObserver()
+        self.observer = Observer()
 
     def run(self):
 
