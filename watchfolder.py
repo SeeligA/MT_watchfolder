@@ -3,6 +3,8 @@ import time
 from configparser import ConfigParser
 from watchdog.observers import  polling
 
+import logging
+
 from scripts.processor import *
 
 
@@ -49,5 +51,11 @@ class Watcher:
 
 
 if __name__ == '__main__':
+
+    format = '%(levelname)s\t%(asctime)s\t%(message)s'
+    datefmt = '%Y-%m-%d %I:%M:%S'
+    filename = os.path.join('data', 'providers.log')
+    logging.basicConfig(filename=filename, format=format, level=logging.INFO, datefmt=datefmt)
+
     w = Watcher()
     w.run()

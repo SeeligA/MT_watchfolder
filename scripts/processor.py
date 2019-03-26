@@ -2,6 +2,7 @@ import re
 import os.path
 import zipfile
 
+import logging
 from configparser import ConfigParser
 from watchdog.events import PatternMatchingEventHandler
 from collections import defaultdict
@@ -13,7 +14,9 @@ class Processor(PatternMatchingEventHandler):
 
     @staticmethod
     def on_created(event):
-        print('\nNew event registered in {}. Checking for providers...'.format(event.src_path))
+
+        print('new event')
+
         parser = ConfigParser()
         parser.read(os.path.join('data', 'config.ini'), encoding = 'utf-8')
 
@@ -23,6 +26,7 @@ class Processor(PatternMatchingEventHandler):
 
         for folder in delivery_dir:
             if folder in event.src_path:
+                print('\nNew deliverable found: {}. Checking for providers...'.format(event.src_path))
                 providers = Processor.unzip_working_files(event.src_path)
 
                 mt_providers = Processor.check_against_blacklist(providers, blacklisted)
@@ -58,6 +62,9 @@ class Processor(PatternMatchingEventHandler):
                         providers[fp] = Processor.get_providers(working_file.read())
 
 
+
+        Processor.log_providers(providers)
+
         return providers
 
 
@@ -91,6 +98,8 @@ class Processor(PatternMatchingEventHandler):
             for k, v in mt_providers.items():
                 f.write(str('Affected file: {}\nMT provider(s): {}\n'.format(k, v)))
 
+                logging.warning('{}\t{}'.format(k, v))
+
 
     def load_blacklist():
 
@@ -99,6 +108,15 @@ class Processor(PatternMatchingEventHandler):
         return providers
 
 
+    def log_providers(providers):
+
+        for fp, details in providers.items():
+
+            for k, v in details.items():
+
+                for system, count in v.items():
+
+                    logging.info('{}\t{}\t{}'.format(fp, system, count))
 
     def get_providers(working_file):
         '''
@@ -113,6 +131,7 @@ class Processor(PatternMatchingEventHandler):
         regex = re.compile(b'origin="([^"]+)" origin-system="([^"]+)"')
 
         origins = regex.findall(working_file)
+
 
         providers = defaultdict(dict)
         count = defaultdict(int)
