@@ -16,12 +16,7 @@ class Processor(PatternMatchingEventHandler):
     @staticmethod
     def on_created(event):
 
-
-        parser = ConfigParser()
-        parser.read(os.path.join('data', 'config.ini'), encoding = 'utf-8')
-
-        delivery_dir = parser.get('directories', 'delivery_dir').split(',')
-        blacklisted = parser.get('mt providers', 'blacklist').split(',')
+        delivery_dir, blacklisted = Processor.load_config(os.path.join('data', 'config.ini'))
 
 
         for folder in delivery_dir:
@@ -67,6 +62,15 @@ class Processor(PatternMatchingEventHandler):
         Processor.log_providers(providers)
 
         return providers
+
+    def load_config(fp):
+        parser = ConfigParser()
+        parser.read(fp, encoding = 'utf-8')
+
+        delivery_dir = parser.get('directories', 'delivery_dir').split(',')
+        blacklisted = parser.get('mt providers', 'blacklist').split(',')
+
+        return(delivery_dir, blacklisted)
 
 
     def check_against_blacklist(providers, blacklist):
