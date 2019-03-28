@@ -84,8 +84,8 @@ class Processor(PatternMatchingEventHandler):
             for mt_provider in blacklist:
 
                 for origin in values.keys():
-                    # encode string to
-                    if mt_provider.encode('utf-8') in providers[file][origin]:
+
+                    if mt_provider in providers[file][origin]:
                         matches.append(mt_provider)
 
             if len(matches) > 0:
@@ -142,7 +142,8 @@ class Processor(PatternMatchingEventHandler):
         count = defaultdict(int)
 
         for i, j in origins:
-
+            i = i.decode('utf8')
+            j = j.decode('utf8')
             count[j] += 1
             providers[i][j] = count[j]
 
