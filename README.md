@@ -25,6 +25,18 @@ This will start an Observer instance. Any registered event will be passed to the
 * MT providers will be logged under **data/providers.log**.
 * If a blacklisted provider has been found, a **WARNING.txt** file will be created in the delivery folder
 
+## Optional: Testing
+In order to run the script test_watchfolder.py successfully you will need to:
+* Install [pytest](https://docs.pytest.org/en/latest/) using pip or conda:
+```
+pip install pytest
+```
+
+* Install the project package by installing setup.py in the root directory:
+```
+pip install -e .
+```
+
 ## Questions
 Feel free to drop me a line in case of any questions.
 
