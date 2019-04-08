@@ -23,21 +23,22 @@ class Processor(PatternMatchingEventHandler):
             if folder in event.src_path:
                 print('\nNew deliverable found: {}. Checking for providers...'.format(event.src_path))
 
-                counter = 0
-                while counter < 10:
+                timeout = 0
+                while timeout < 10:
                     try:
                         providers = Processor.unzip_working_files(event.src_path)
+                        timeout = 10
 
                     except FileNotFoundError:
                         try:
                             providers = Processor.unzip_working_files(os.path.join(event.src_path, 'wsxz'))
-                            counter = 10
+                            timeout = 10
 
                         except FileNotFoundError:
                             time.sleep(4)
-                            
+
                     else:
-                        counter += 1
+                        timeout += 1
 
                 mt_providers = Processor.check_against_blacklist(providers, blacklisted)
 
@@ -58,20 +59,27 @@ class Processor(PatternMatchingEventHandler):
         providers -- nested dictionary containing providers + counts per *.SDLXLIFF working file
         '''
 
-        # Add sleep time to prevent PermissionError when reading file
         time.sleep(1)
+
         providers = dict()
 
+        timeout = 0
+        while timeout < 10:
+            try:
+                with zipfile.ZipFile(filepath, 'r') as return_package:
 
-        with zipfile.ZipFile(filepath, 'r') as return_package:
+                    for fp in return_package.namelist():
 
-            for fp in return_package.namelist():
+                        if fp.endswith('.sdlxliff'):
 
-                if fp.endswith('.sdlxliff'):
+                            with return_package.open(fp) as working_file:
+                                providers[fp] = Processor.get_providers(working_file.read())
+                counter = 10
 
-                    with return_package.open(fp) as working_file:
-                        providers[fp] = Processor.get_providers(working_file.read())
-
+            except PermissionError:
+                time.sleep(2)
+            else:
+                timeout +=1
 
 
         Processor.log_providers(providers)
