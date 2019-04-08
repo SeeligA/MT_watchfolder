@@ -22,7 +22,22 @@ class Processor(PatternMatchingEventHandler):
         for folder in delivery_dir:
             if folder in event.src_path:
                 print('\nNew deliverable found: {}. Checking for providers...'.format(event.src_path))
-                providers = Processor.unzip_working_files(event.src_path)
+
+                counter = 0
+                while counter < 10:
+                    try:
+                        providers = Processor.unzip_working_files(event.src_path)
+
+                    except FileNotFoundError:
+                        try:
+                            providers = Processor.unzip_working_files(os.path.join(event.src_path, 'wsxz'))
+                            counter = 10
+
+                        except FileNotFoundError:
+                            time.sleep(4)
+                            
+                    else:
+                        counter += 1
 
                 mt_providers = Processor.check_against_blacklist(providers, blacklisted)
 
