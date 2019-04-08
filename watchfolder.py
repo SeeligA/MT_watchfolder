@@ -12,7 +12,7 @@ class Watcher:
 
 
     parser = ConfigParser()
-    parser.read(os.path.join('data', 'config.ini'), encoding = 'utf-8')
+    parser.read(os.path.join('data', 'config.ini'))
 
 
     project_dirs = parser.get('directories', 'project_dirs').split(',')

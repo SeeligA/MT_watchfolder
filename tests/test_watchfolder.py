@@ -10,8 +10,8 @@ def test_load_config():
 
     delivery_dir, blacklisted = Processor.load_config(fp)
 
-    assert isinstance(delivery_dir, list) & len(delivery_dir) > 0
-
+    assert isinstance(delivery_dir, list)
+    assert len(delivery_dir) > 0
 
 
 def test_unzip_working_files():
