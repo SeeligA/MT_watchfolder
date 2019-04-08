@@ -3,6 +3,7 @@ import os.path
 import zipfile
 import time
 
+import json
 import logging
 from configparser import ConfigParser
 from watchdog.events import PatternMatchingEventHandler
@@ -90,8 +91,8 @@ class Processor(PatternMatchingEventHandler):
         parser = ConfigParser()
         parser.read(fp)
 
-        delivery_dir = parser.get('directories', 'delivery_dir').split(',')
-        blacklisted = parser.get('mt providers', 'blacklist').split(',')
+        delivery_dir = json.loads(parser.get('directories', 'delivery_dir'))
+        blacklisted = json.loads(parser.get('mt providers', 'blacklist'))
 
         return(delivery_dir, blacklisted)
 

@@ -4,7 +4,7 @@ from configparser import ConfigParser
 from watchdog.observers import  Observer
 
 import logging
-
+import json
 from scripts.processor import *
 
 
@@ -14,8 +14,7 @@ class Watcher:
     parser = ConfigParser()
     parser.read(os.path.join('data', 'config.ini'))
 
-
-    project_dirs = parser.get('directories', 'project_dirs').split(',')
+    project_dirs = json.loads(parser.get('directories', 'project_dirs'))
 
     DIRECTORY_TO_WATCH = project_dirs
     print('Watchfolder started...')
