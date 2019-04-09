@@ -14,9 +14,7 @@ from collections import defaultdict
 class Processor(PatternMatchingEventHandler):
     '''
     -> load_config() -> on_created() -> unzip_working_files() -> get_providers()
-    -> log_providers() -> load_blacklist() -> check_against_blacklist()
-    -> print_warning()
-
+    -> log_providers() -> check_against_blacklist() -> print_warning()
     '''
 
 
@@ -135,12 +133,6 @@ class Processor(PatternMatchingEventHandler):
 
                 logging.warning('{}\t{}'.format(k, v))
 
-
-    def load_blacklist():
-
-        providers = parser.get('mt providers', 'blacklist').split(',')
-
-        return providers
 
 
     def log_providers(providers):
