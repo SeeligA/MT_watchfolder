@@ -29,7 +29,7 @@ class Watcher:
     def run(self):
 
         # Define file extensions to be considered for events
-        patt = ['*.sdlrpx', '*.wsxz']
+        patt = ['*.sdlrpx', '*.wsxz', '*.sdlxliff']
         event_handler = Processor(patterns=patt)
 
         # Loop over watchfolder directories to schedule observer threads

@@ -23,32 +23,32 @@ class Processor(PatternMatchingEventHandler):
 
         delivery_dir, blacklisted = Processor.load_config(os.path.join('data', 'config.ini'))
 
+        if [True for folder in delivery_dir if folder not in event.src_path]:
+            return None
 
-        for folder in delivery_dir:
-            if folder in event.src_path:
-                print('\nNew deliverable found: {}. Checking for providers...'.format(event.src_path))
+        print('\nNew deliverable found: {}. Checking for providers...'.format(event.src_path))
 
-                timeout = 0
-                while timeout < 10:
-                    try:
-                        providers = Processor.unzip_working_files(event.src_path)
-                        timeout = 10
+        timeout = 0
+        while timeout < 10:
+            try:
+                providers = Processor.unzip_working_files(event.src_path)
+                timeout = 10
 
-                    except FileNotFoundError:
-                        try:
-                            providers = Processor.unzip_working_files(os.path.join(event.src_path, 'wsxz'))
-                            timeout = 10
+            except FileNotFoundError:
+                try:
+                    providers = Processor.unzip_working_files(os.path.join(event.src_path, 'wsxz'))
+                    timeout = 10
 
-                        except FileNotFoundError:
-                            time.sleep(4)
+                except FileNotFoundError:
+                    time.sleep(4)
 
-                    else:
-                        timeout += 1
+            else:
+                timeout += 1
 
-                mt_providers = Processor.check_against_blacklist(providers, blacklisted)
+        mt_providers = Processor.check_against_blacklist(providers, blacklisted)
 
-                if len(mt_providers) > 0:
-                    Processor.print_warning(os.path.dirname(event.src_path), mt_providers)
+        if len(mt_providers) > 0:
+            Processor.print_warning(os.path.dirname(event.src_path), mt_providers)
 
 
     @classmethod
@@ -68,24 +68,33 @@ class Processor(PatternMatchingEventHandler):
 
         providers = dict()
 
-        timeout = 0
-        while timeout < 10:
-            try:
-                with zipfile.ZipFile(filepath, 'r') as return_package:
+        if filepath.endswith('.sdlxliff'):
 
-                    for fp in return_package.namelist():
+            regex = re.compile(r'[^\\]+?\.sdlxliff$')
+            fp = regex.search(filepath).group()
 
-                        if fp.endswith('.sdlxliff'):
+            with open(filepath, 'rb') as working_file:
+                providers[fp] = Processor.get_providers(working_file.read())
 
-                            with return_package.open(fp) as working_file:
-                                providers[fp] = Processor.get_providers(working_file.read())
-                counter = 10
+        else:
+            timeout = 0
+            while timeout < 10:
 
-            except PermissionError:
-                time.sleep(2)
-            else:
-                timeout +=1
+                try:
+                    with zipfile.ZipFile(filepath, 'r') as return_package:
 
+                        for fp in return_package.namelist():
+
+                            if fp.endswith('.sdlxliff'):
+
+                                with return_package.open(fp) as working_file:
+                                    providers[fp] = Processor.get_providers(working_file.read())
+                    counter = 10
+
+                except PermissionError:
+                    time.sleep(2)
+                else:
+                    timeout +=1
 
         Processor.log_providers(providers)
 
