@@ -13,7 +13,7 @@ from collections import defaultdict
 
 class Processor(PatternMatchingEventHandler):
     '''
-    -> load_config() -> on_created() -> unzip_working_files() -> get_providers()
+    -> load_config() -> on_created() -> read_working_file()/read_return_package() -> get_providers()
     -> log_providers() -> check_against_blacklist() -> print_warning()
     '''
 
@@ -22,37 +22,45 @@ class Processor(PatternMatchingEventHandler):
     def on_created(event):
 
         delivery_dir, blacklisted = Processor.load_config(os.path.join('data', 'config.ini'))
-
+        # Check file path against deliver_dir filter and end if no match was found
         if [True for folder in delivery_dir if folder not in event.src_path]:
             return None
 
         print('\nNew deliverable found: {}. Checking for providers...'.format(event.src_path))
 
-        timeout = 0
-        while timeout < 10:
-            try:
-                providers = Processor.unzip_working_files(event.src_path)
-                timeout = 10
+        if event.src_path.endswith('.sdlxliff'):
+            providers = Processor.read_working_file(event.src_path)
 
-            except FileNotFoundError:
+        else:
+            timeout = 0
+            while timeout < 10:
+                # Allow for extra time in case creating the return package takes longer
                 try:
-                    providers = Processor.unzip_working_files(os.path.join(event.src_path, 'wsxz'))
+                    providers = Processor.read_return_package(event.src_path)
                     timeout = 10
 
                 except FileNotFoundError:
-                    time.sleep(4)
+                    # Try adding extension in case the deliverable is wrapped in a wsxz package
+                    try:
+                        providers = Processor.read_return_package(os.path.join(event.src_path, 'wsxz'))
+                        timeout = 10
 
-            else:
-                timeout += 1
+                    except FileNotFoundError:
+                        time.sleep(4)
+
+                else:
+                    timeout += 1
+
 
         mt_providers = Processor.check_against_blacklist(providers, blacklisted)
 
         if len(mt_providers) > 0:
             Processor.print_warning(os.path.dirname(event.src_path), mt_providers)
 
+        Processor.log_providers(providers)
 
-    @classmethod
-    def unzip_working_files(cls, filepath):
+
+    def read_return_package(filepath):
 
         '''
         Open return package and collect translation providers from *.SDLXLIFF working files
@@ -68,37 +76,48 @@ class Processor(PatternMatchingEventHandler):
 
         providers = dict()
 
-        if filepath.endswith('.sdlxliff'):
+        timeout = 0
+        while timeout < 10:
 
-            regex = re.compile(r'[^\\]+?\.sdlxliff$')
-            fp = regex.search(filepath).group()
+            try:
+                with zipfile.ZipFile(filepath, 'r') as return_package:
 
-            with open(filepath, 'rb') as working_file:
-                providers[fp] = Processor.get_providers(working_file.read())
+                    for fp in return_package.namelist():
 
-        else:
-            timeout = 0
-            while timeout < 10:
+                        if fp.endswith('.sdlxliff'):
 
-                try:
-                    with zipfile.ZipFile(filepath, 'r') as return_package:
+                            with return_package.open(fp) as working_file:
+                                providers[fp] = Processor.get_providers(working_file.read())
 
-                        for fp in return_package.namelist():
+                timeout = 10
 
-                            if fp.endswith('.sdlxliff'):
-
-                                with return_package.open(fp) as working_file:
-                                    providers[fp] = Processor.get_providers(working_file.read())
-                    counter = 10
-
-                except PermissionError:
-                    time.sleep(2)
-                else:
-                    timeout +=1
-
-        Processor.log_providers(providers)
+            except PermissionError:
+                time.sleep(2)
+            else:
+                timeout +=1
 
         return providers
+
+
+
+    def read_working_file(filepath):
+        '''
+        Collect translation providers from a single *.SDLXLIFF working file
+
+        Arguments:
+        filepath -- return package flagged by observer instance
+
+        Returns
+        providers -- dictionary containing providers + counts for *.SDLXLIFF working file
+        '''
+        time.sleep(1)
+        providers = dict()
+
+        with open(filepath, 'rb') as working_file:
+            providers[os.path.basename(filepath)] = Processor.get_providers(working_file.read())
+
+        return providers
+
 
     def load_config(fp):
         parser = ConfigParser()
