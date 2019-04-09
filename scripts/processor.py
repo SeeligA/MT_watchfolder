@@ -12,6 +12,12 @@ from collections import defaultdict
 
 
 class Processor(PatternMatchingEventHandler):
+    '''
+    -> load_config() -> on_created() -> unzip_working_files() -> get_providers()
+    -> log_providers() -> load_blacklist() -> check_against_blacklist()
+    -> print_warning()
+
+    '''
 
 
     @staticmethod
@@ -142,10 +148,12 @@ class Processor(PatternMatchingEventHandler):
         for fp, details in providers.items():
 
             for k, v in details.items():
+                # Add filter for auto-propagated TM matches
+                if k != "auto-propagated":
 
-                for system, count in v.items():
+                    for system, count in v.items():
 
-                    logging.info('{}\t{}\t{}'.format(fp, system, count))
+                        logging.info('{}\t{}\t{}'.format(fp, system, count))
 
     def get_providers(working_file):
         '''
