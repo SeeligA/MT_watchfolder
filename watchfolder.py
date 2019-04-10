@@ -4,6 +4,7 @@ from configparser import ConfigParser
 from watchdog.observers import  Observer
 
 import logging
+from logging.handlers import TimedRotatingFileHandler
 import json
 from scripts.processor import *
 
@@ -52,7 +53,9 @@ if __name__ == '__main__':
     format = '%(levelname)s\t%(asctime)s\t%(message)s'
     datefmt = '%Y-%m-%d %I:%M:%S'
     filename = os.path.join('data', 'providers.log')
-    logging.basicConfig(handlers=[logging.FileHandler(filename, 'a', 'utf-8')],
+    handler = TimedRotatingFileHandler(filename, encoding='utf-8', when='midnight', interval=1)
+
+    logging.basicConfig(handlers=[handler],
                         format=format,
                         level=logging.INFO,
                         datefmt=datefmt)
