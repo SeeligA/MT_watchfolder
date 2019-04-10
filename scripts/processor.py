@@ -32,9 +32,9 @@ class Processor(PatternMatchingEventHandler):
             providers = Processor.read_working_file(event.src_path)
 
         else:
-            providers = Processor.open_return_package(event.src_path)
+            providers = Processor.read_return_package(event.src_path)
             if providers == None:
-                return print(' File not found. Abort process.')
+                return print(' Unable to acces file. Abort process.')
 
 
         mt_providers = Processor.check_against_blacklist(providers, blacklisted)
@@ -46,39 +46,7 @@ class Processor(PatternMatchingEventHandler):
 
         Processor.log_providers(providers)
 
-    def open_return_package(filepath):
-        '''
-        '''
 
-        timeout = 0
-        while timeout < 10:
-            print('.', end='')
-            # Allow for extra time in case creating the return package takes longer
-            try:
-                providers = Processor.read_return_package(filepath)
-                timeout = 10
-
-            except FileNotFoundError:
-                # Try adding extension in case the deliverable is wrapped in a wsxz package
-                try:
-                    providers = Processor.read_return_package(os.path.join(filepath, 'wsxz'))
-                    timeout = 10
-
-                except FileNotFoundError:
-
-                    time.sleep(3)
-                    timeout += 1
-
-                    if timeout == 10:
-                        return None
-
-                    else:
-                        continue
-
-            else:
-                timeout += 1
-
-        return providers
 
     def read_return_package(filepath):
 
@@ -110,14 +78,20 @@ class Processor(PatternMatchingEventHandler):
                             with return_package.open(fp) as working_file:
                                 providers[fp] = Processor.get_providers(working_file.read())
 
-                timeout = 10
+                    return providers
 
+
+            except FileNotFoundError:
+                return None
+
+            # Allow for extra time in case creating the return package takes longer
             except PermissionError:
                 time.sleep(2)
+                if timeout == 10:
+                    return None
+
             else:
                 timeout +=1
-
-        return providers
 
 
 
