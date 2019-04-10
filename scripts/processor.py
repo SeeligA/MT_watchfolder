@@ -26,39 +26,59 @@ class Processor(PatternMatchingEventHandler):
         if [True for folder in delivery_dir if folder not in event.src_path]:
             return None
 
-        print('\nNew deliverable found: {}. Checking for providers...'.format(event.src_path))
+        print('\nNew deliverable found: {}. Checking for providers...'.format(event.src_path), end='')
 
         if event.src_path.endswith('.sdlxliff'):
             providers = Processor.read_working_file(event.src_path)
 
         else:
-            timeout = 0
-            while timeout < 10:
-                # Allow for extra time in case creating the return package takes longer
-                try:
-                    providers = Processor.read_return_package(event.src_path)
-                    timeout = 10
-
-                except FileNotFoundError:
-                    # Try adding extension in case the deliverable is wrapped in a wsxz package
-                    try:
-                        providers = Processor.read_return_package(os.path.join(event.src_path, 'wsxz'))
-                        timeout = 10
-
-                    except FileNotFoundError:
-                        time.sleep(4)
-
-                else:
-                    timeout += 1
+            providers = Processor.open_return_package(event.src_path)
+            if providers == None:
+                return print(' File not found. Abort process.')
 
 
         mt_providers = Processor.check_against_blacklist(providers, blacklisted)
 
         if len(mt_providers) > 0:
             Processor.print_warning(os.path.dirname(event.src_path), mt_providers)
+        else:
+            print(' Check complete: All good.')
 
         Processor.log_providers(providers)
 
+    def open_return_package(filepath):
+        '''
+        '''
+
+        timeout = 0
+        while timeout < 10:
+            print('.', end='')
+            # Allow for extra time in case creating the return package takes longer
+            try:
+                providers = Processor.read_return_package(filepath)
+                timeout = 10
+
+            except FileNotFoundError:
+                # Try adding extension in case the deliverable is wrapped in a wsxz package
+                try:
+                    providers = Processor.read_return_package(os.path.join(filepath, 'wsxz'))
+                    timeout = 10
+
+                except FileNotFoundError:
+
+                    time.sleep(3)
+                    timeout += 1
+
+                    if timeout == 10:
+                        return None
+
+                    else:
+                        continue
+
+            else:
+                timeout += 1
+
+        return providers
 
     def read_return_package(filepath):
 
@@ -78,6 +98,7 @@ class Processor(PatternMatchingEventHandler):
 
         timeout = 0
         while timeout < 10:
+            print('.', end='')
 
             try:
                 with zipfile.ZipFile(filepath, 'r') as return_package:
@@ -157,7 +178,7 @@ class Processor(PatternMatchingEventHandler):
 
             f.write('MT providers found.\n')
             for k, v in mt_providers.items():
-                f.write(str('Affected file: {}\nMT provider(s): {}\n'.format(k, v)))
+                f.write(str('See file: {}\nMT provider(s): {}\n'.format(k, v)))
 
                 logging.warning('{}\t{}'.format(k, v))
 
