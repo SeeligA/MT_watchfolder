@@ -142,7 +142,7 @@ class Processor(PatternMatchingEventHandler):
 
     def load_config(fp):
         parser = ConfigParser()
-        parser.read(fp)
+        parser.read(fp, encoding='utf8')
 
         delivery_dir = json.loads(parser.get('directories', 'delivery_dir'))
         blacklisted = json.loads(parser.get('mt providers', 'blacklist'))
