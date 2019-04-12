@@ -3,6 +3,7 @@ import os.path
 import zipfile
 import time
 
+import json
 import logging
 from configparser import ConfigParser
 from watchdog.events import PatternMatchingEventHandler
@@ -11,27 +12,43 @@ from collections import defaultdict
 
 
 class Processor(PatternMatchingEventHandler):
+    '''
+    -> load_config() -> on_created() -> read_working_file()/read_return_package() -> get_providers()
+    -> log_providers() -> check_against_blacklist() -> print_warning()
+    '''
 
 
     @staticmethod
     def on_created(event):
 
         delivery_dir, blacklisted = Processor.load_config(os.path.join('data', 'config.ini'))
+        # Check file path against deliver_dir filter and end if no match was found
+        if [True for folder in delivery_dir if folder not in event.src_path]:
+            return None
+
+        print('\nNew deliverable found: {}. Checking for providers...'.format(event.src_path), end='')
+
+        if event.src_path.endswith('.sdlxliff'):
+            providers = Processor.read_working_file(event.src_path)
+
+        else:
+            providers = Processor.read_return_package(event.src_path)
+            if providers == None:
+                return print(' Unable to acces file. Abort process.')
 
 
-        for folder in delivery_dir:
-            if folder in event.src_path:
-                print('\nNew deliverable found: {}. Checking for providers...'.format(event.src_path))
-                providers = Processor.unzip_working_files(event.src_path)
+        mt_providers = Processor.check_against_blacklist(providers, blacklisted)
 
-                mt_providers = Processor.check_against_blacklist(providers, blacklisted)
+        if len(mt_providers) > 0:
+            Processor.print_warning(os.path.dirname(event.src_path), mt_providers)
+        else:
+            print(' Check complete: All good.')
 
-                if len(mt_providers) > 0:
-                    Processor.print_warning(os.path.dirname(event.src_path), mt_providers)
+        Processor.log_providers(providers)
 
 
-    @classmethod
-    def unzip_working_files(cls, filepath):
+
+    def read_return_package(filepath):
 
         '''
         Open return package and collect translation providers from *.SDLXLIFF working files
@@ -43,32 +60,66 @@ class Processor(PatternMatchingEventHandler):
         providers -- nested dictionary containing providers + counts per *.SDLXLIFF working file
         '''
 
-        # Add sleep time to prevent PermissionError when reading file
+        time.sleep(1)
+
+        providers = dict()
+
+        timeout = 0
+        while timeout < 10:
+            print('.', end='')
+
+            try:
+                with zipfile.ZipFile(filepath, 'r') as return_package:
+
+                    for fp in return_package.namelist():
+
+                        if fp.endswith('.sdlxliff'):
+
+                            with return_package.open(fp) as working_file:
+                                providers[fp] = Processor.get_providers(working_file.read())
+
+                    return providers
+
+
+            except FileNotFoundError:
+                return None
+
+            # Allow for extra time in case creating the return package takes longer
+            except PermissionError:
+                time.sleep(2)
+                if timeout == 10:
+                    return None
+
+            else:
+                timeout +=1
+
+
+
+    def read_working_file(filepath):
+        '''
+        Collect translation providers from a single *.SDLXLIFF working file
+
+        Arguments:
+        filepath -- return package flagged by observer instance
+
+        Returns
+        providers -- dictionary containing providers + counts for *.SDLXLIFF working file
+        '''
         time.sleep(1)
         providers = dict()
 
-
-        with zipfile.ZipFile(filepath, 'r') as return_package:
-
-            for fp in return_package.namelist():
-
-                if fp.endswith('.sdlxliff'):
-
-                    with return_package.open(fp) as working_file:
-                        providers[fp] = Processor.get_providers(working_file.read())
-
-
-
-        Processor.log_providers(providers)
+        with open(filepath, 'rb') as working_file:
+            providers[os.path.basename(filepath)] = Processor.get_providers(working_file.read())
 
         return providers
 
+
     def load_config(fp):
         parser = ConfigParser()
-        parser.read(fp, encoding = 'utf-8')
+        parser.read(fp, encoding='utf8')
 
-        delivery_dir = parser.get('directories', 'delivery_dir').split(',')
-        blacklisted = parser.get('mt providers', 'blacklist').split(',')
+        delivery_dir = json.loads(parser.get('directories', 'delivery_dir'))
+        blacklisted = json.loads(parser.get('mt providers', 'blacklist'))
 
         return(delivery_dir, blacklisted)
 
@@ -101,16 +152,10 @@ class Processor(PatternMatchingEventHandler):
 
             f.write('MT providers found.\n')
             for k, v in mt_providers.items():
-                f.write(str('Affected file: {}\nMT provider(s): {}\n'.format(k, v)))
+                f.write(str('See file: {}\nMT provider(s): {}\n'.format(k, v)))
 
                 logging.warning('{}\t{}'.format(k, v))
 
-
-    def load_blacklist():
-
-        providers = parser.get('mt providers', 'blacklist').split(',')
-
-        return providers
 
 
     def log_providers(providers):
@@ -118,10 +163,12 @@ class Processor(PatternMatchingEventHandler):
         for fp, details in providers.items():
 
             for k, v in details.items():
+                # Add filter for auto-propagated TM matches
+                if k != "auto-propagated":
 
-                for system, count in v.items():
+                    for system, count in v.items():
 
-                    logging.info('{}\t{}\t{}'.format(fp, system, count))
+                        logging.info('{}\t{}\t{}'.format(fp, system, count))
 
     def get_providers(working_file):
         '''

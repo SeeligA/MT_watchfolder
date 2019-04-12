@@ -37,7 +37,7 @@ more-itertools=6.0.0=py37_0
 msys2-conda-epoch=20160418=1
 nbconvert=5.3.1=py37_0
 nbformat=4.4.0=py37_0
-notebook=5.7.4=py37_0
+notebook=5.7.8=py37_0
 openssl=1.1.1b=he774522_1
 pandoc=2.2.3.2=0
 pandocfilters=1.4.2=py37_1
