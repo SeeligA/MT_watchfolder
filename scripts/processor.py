@@ -22,8 +22,8 @@ class Processor(PatternMatchingEventHandler):
     def on_created(event):
 
         delivery_dir, blacklisted = Processor.load_config(os.path.join('data', 'config.ini'))
-        # Check file path against deliver_dir filter and end if no match was found
-        if [True for folder in delivery_dir if folder not in event.src_path]:
+        # Check file path against delivery_dir filter and end if no match was found
+        if len([True for folder in delivery_dir if folder not in event.src_path]) == len(delivery_dir) and len(delivery_dir) != 0:
             return None
 
         print('\nNew deliverable found: {}. Checking for providers...'.format(event.src_path), end='')
@@ -44,7 +44,7 @@ class Processor(PatternMatchingEventHandler):
         else:
             print(' Check complete: All good.')
 
-        Processor.log_providers(providers)
+        Processor.log_providers(providers, event.src_path)
 
 
 
@@ -125,7 +125,15 @@ class Processor(PatternMatchingEventHandler):
 
 
     def check_against_blacklist(providers, blacklist):
+        '''
+        Check provider information for blacklisted entries
+        Arguments:
+        provider -- dictionary taking the format providers[origin][origin-system] = count
+        blacklist -- list of blacklisted provider names
 
+        Returns
+        mt_providers -- dictionary with file names as keys and matched providers as values
+        '''
         mt_providers = {}
 
 
@@ -148,7 +156,7 @@ class Processor(PatternMatchingEventHandler):
     def print_warning(file_path, mt_providers):
 
         print('\nMT providers found. Check {} for details'.format('\\'.join((file_path, 'MT WARNING.txt'))))
-        with open(os.path.join(file_path, "MT WARNING.txt"), "a") as f:
+        with open(os.path.join(file_path, "MT WARNING.txt"), "a", encoding='utf8') as f:
 
             f.write('MT providers found.\n')
             for k, v in mt_providers.items():
@@ -158,7 +166,11 @@ class Processor(PatternMatchingEventHandler):
 
 
 
-    def log_providers(providers):
+    def log_providers(providers, deliverable):
+        '''
+
+        '''
+        logging.info('Deliverable: {}'.format(deliverable))
 
         for fp, details in providers.items():
 
@@ -181,7 +193,7 @@ class Processor(PatternMatchingEventHandler):
         providers -- dictionary taking the format providers[origin][origin-system] = count
         '''
         regex = re.compile(b'origin="([^"]+)" origin-system="([^"]+)"')
-
+        # return a list of tuples ('origin', 'origin_system')
         origins = regex.findall(working_file)
 
 
