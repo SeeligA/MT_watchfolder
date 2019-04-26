@@ -1,6 +1,6 @@
 # MT_watchfolder
 
-MT_watchfolder is a Python script that monitors your SDL Trados Studio deliverables for TM/MT provider information. Run it on your file directory to log provider details. Add provider information to your blacklist and raise a warning if a criteria has been met.
+MT_watchfolder is a Python script that monitors your SDL Trados Studio deliverables for TM/MT provider information. Run it on your file directory to log provider details. Add provider information to your blacklist and raise a warning if a provider has been matched.
 
 ## Requirements
 
@@ -21,12 +21,12 @@ Check the [requirements](https://github.com/SeeligA/MT_watchfolder/blob/master/d
 ```
 python watchfolder.py
 ```
-This will start an Observer instance. Any registered event will be passed to the Processor for  running the relevant checks.
-* MT providers will be logged under **data/providers.log**.
-* If a blacklisted provider has been found, a **WARNING.txt** file will be created in the delivery folder
+This will start an Observer instance. If a new deliverable has been created, this event will be passed to the Processor for running the relevant checks.
+* TM and MT providers and their counts will be logged under **data/providers.log**.
+* If a blacklisted provider has been found, a **WARNING.txt** file will be created in the delivery folder.
 
 ## Optional: Testing
-In order to run the script test_watchfolder.py successfully you will need to:
+In order to run the test_watchfolder.py script successfully you will need to:
 * Install [pytest](https://docs.pytest.org/en/latest/) using pip or conda:
 ```
 pip install pytest

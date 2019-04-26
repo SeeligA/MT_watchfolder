@@ -14,7 +14,8 @@ class Watcher:
 
     parser = ConfigParser()
     parser.read(os.path.join('data', 'config.ini'), encoding='utf8')
-
+    # Load config data and store list as as global variable.
+    # The loads method allows for the use of whitespace in the config file
     project_dirs = json.loads(parser.get('directories', 'project_dirs'))
 
     DIRECTORY_TO_WATCH = project_dirs
@@ -59,6 +60,7 @@ if __name__ == '__main__':
                         format=format,
                         level=logging.INFO,
                         datefmt=datefmt)
+    logging.info('Process started by {}'.format(os.path.expanduser("~")))
 
     w = Watcher()
     w.run()
