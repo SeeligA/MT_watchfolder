@@ -1,17 +1,11 @@
-import time
-
-from configparser import ConfigParser
-from watchdog.observers import  Observer
-
-import logging
 from logging.handlers import TimedRotatingFileHandler
-import json
+
+from watchdog.observers import Observer
+
 from scripts.processor import *
 
 
 class Watcher:
-
-
     parser = ConfigParser()
     parser.read(os.path.join('data', 'config.ini'), encoding='utf8')
     # Load config data and store list as as global variable.
@@ -21,8 +15,8 @@ class Watcher:
     DIRECTORY_TO_WATCH = project_dirs
     print('Watchfolder started...')
     print('Running on these directories:')
-    for i in range(len(project_dirs)):
-        print(project_dirs[i])
+    for directory in project_dirs:
+        print(directory)
 
     def __init__(self):
 
@@ -35,8 +29,8 @@ class Watcher:
         event_handler = Processor(patterns=patt)
 
         # Loop over watchfolder directories to schedule observer threads
-        for i in range(len(self.DIRECTORY_TO_WATCH)):
-            self.observer.schedule(event_handler, self.DIRECTORY_TO_WATCH[i], recursive=True)
+        for directory in self.DIRECTORY_TO_WATCH:
+            self.observer.schedule(event_handler, directory, recursive=True)
 
         self.observer.start()
         try:
@@ -48,16 +42,14 @@ class Watcher:
         self.observer.join()
 
 
-
 if __name__ == '__main__':
-
-    format = '%(levelname)s\t%(asctime)s\t%(message)s'
+    fmt = '%(levelname)s\t%(asctime)s\t%(message)s'
     datefmt = '%Y-%m-%d %I:%M:%S'
     filename = os.path.join('data', 'providers.log')
     handler = TimedRotatingFileHandler(filename, encoding='utf-8', when='midnight', interval=1)
 
     logging.basicConfig(handlers=[handler],
-                        format=format,
+                        format=fmt,
                         level=logging.INFO,
                         datefmt=datefmt)
     logging.info('Process started by {}'.format(os.path.expanduser("~")))
