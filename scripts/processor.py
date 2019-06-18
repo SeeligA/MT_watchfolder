@@ -116,23 +116,25 @@ class Processor(PatternMatchingEventHandler):
         """
         Check provider information for blacklisted entries
         Arguments:
-        provider -- dictionary taking the format providers[origin][origin-system] = count
+        providers -- dictionary taking the format providers[origin][origin-system] = count
         blacklist -- list of blacklisted provider names
 
         Returns
         mt_providers -- dictionary with file names as keys and matched providers as values
         """
-        mt_providers = {}
+        # Create regex from blacklist items and include flags, if any:
+        if blacklist[0] == '(?i)':
+            regex = re.compile('{}({})'.format(blacklist[0], '|'.join(blacklist[1:])))
+        else:
+            regex = re.compile('({})'.format('|'.join(blacklist)))
 
+        mt_providers = {}
         for file, values in providers.items():
             matches = []
 
-            for mt_provider in blacklist:
-
-                for origin in values.keys():
-
-                    if mt_provider in providers[file][origin]:
-                        matches.append(mt_provider)
+            for origin in values.keys():
+                # Check provider names against regex and write matches to list
+                matches += [item for item in providers[file][origin] if regex.findall(item)]
 
             if len(matches) > 0:
                 mt_providers[file] = matches
@@ -163,22 +165,22 @@ def get_providers(working_file):
     working_file -- in XML format
 
     Returns:
-    providers -- dictionary taking the format providers[origin][origin-system] = count
+    prov -- dictionary taking the format prov[origin][origin-system] = count
     """
     regex = re.compile(b'origin="([^"]+)" origin-system="([^"]+)"')
     # return a list of tuples ('origin', 'origin_system')
     origins = regex.findall(working_file)
 
-    providers = defaultdict(dict)
-    count = defaultdict()
+    prov = defaultdict(dict)
+    count = defaultdict(int)
 
     for i, j in origins:
         i = i.decode('utf8')
         j = j.decode('utf8')
         count[j] += 1
-        providers[i][j] = count[j]
+        prov[i][j] = count[j]
 
-        return providers
+    return prov
 
 
 def print_warning(dir_path, mt_providers):

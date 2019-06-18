@@ -10,6 +10,7 @@ __pycache__/
 .Python
 env/
 build/
+data/config.ini
 develop-eggs/
 dist/
 downloads/
@@ -24,6 +25,9 @@ var/
 .installed.cfg
 *.egg
 *.log
+# PyCharm
+*.idea/
+
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -38,6 +42,7 @@ pip-delete-this-directory.txt
 
 # IPython Notebook
 .ipynb_checkpoints
+*.ipynb
 
 # pyenv
 .python-version
